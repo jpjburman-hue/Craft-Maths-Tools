@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save the Panicking Planet! - Bulletproof Patch</title>
+    <style>
+        :root {
+            --space-dark: #060314;
+            --laser-glow: #00ffff;
+            --plasma-green: #39ff14;
+            --magma-orange: #ff4500;
+            --glass-sheet: rgba(16, 10, 32, 0.9);
+            --border-purple: #5c3bc4;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--space-dark);
+            color: #ffffff;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .defense-console {
+            position: relative;
+            z-index: 10;
+            background: var(--glass-sheet);
+            border: 3px solid var(--border-purple);
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(92, 59, 196, 0.3);
+            border-radius: 24px;
+            padding: 25px;
+            max-width: 640px;
+            width: 100%;
+            backdrop-filter: blur(12px);
+            transition: transform 0.05s ease;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 4px 0;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #fff, var(--laser-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .alert-bar {
+            text-align: center;
+            color: #ff9d00;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .viewport-container {
+            background: #010003;
+            border: 2px solid #28184f;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,1);
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            bottom: 115px;
+            left: 100px;
+            background: white;
+            color: black;
+            padding: 8px 14px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            max-width: 180px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation: bounceBubble 0.4s ease-out infinite alternate;
+            display: none;
+            z-index: 15;
+        }
+
+        @keyframes bounceBubble {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-4px); }
+        }
+
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .dash-card {
+            background: rgba(5, 2, 12, 0.9);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .dash-lbl {
+            font-size: 0.65rem;
+            color: #8d81ad;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .dash-val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .problem-pod {
+            background: linear-gradient(180deg, #060214, #180b33);
+            border-bottom: 3px solid var(--laser-glow);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .problem-string {
+            font-size: 2.6rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: var(--laser-glow);
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+            letter-spacing: 1px;
+        }
+
+        .input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .console-input {
+            background: #030107;
+            border: 2px solid #44326e;
+            border-radius: 12px;
+            padding: 12px;
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: bold;
+            text-align: center;
+            font-family: monospace;
+            transition: all 0.2s ease;
+        }
+
+        .in-coeff { width: 120px; border-color: #a485ff; color: #d6c7ff; }
+        .in-exp { width: 85px; border-color: var(--laser-glow); color: var(--laser-glow); }
+
+        .console-input:focus {
+            outline: none;
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transform: scale(1.03);
+        }
+
+        .mult-node {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #63538c;
+        }
+
+        .fire-btn {
+            background: linear-gradient(90deg, #5c3bc4, #cf218b);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .fire-btn:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 20px rgba(207, 33, 139, 0.5);
+        }
+
+        .modal-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 2, 12, 0.98);
+            border-radius: 22px;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .modal-layer h2 {
+            font-size: 2.2rem;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .modal-layer p {
+            color: #8f85a8;
+            line-height: 1.5;
+            margin: 0 0 15px 0;
+            max-width: 450px;
+            font-size: 0.95rem;
+        }
+
+        .leaderboard-container {
+            width: 85%;
+            background: #0b0617;
+            border: 2px solid #301f52;
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .leaderboard-title {
+            font-size: 0.9rem;
+            color: var(--laser-glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-family: monospace;
+            font-size: 1rem;
+        }
+        .score-row:last-child { border-bottom: none; }
+        .score-row.highlight { color: var(--plasma-green); font-weight: bold; }
+
+        .name-entry-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 85%;
+        }
+
+        .name-input {
+            flex: 1;
+            background: #030107;
+            border: 2px solid #5c3bc4;
+            border-radius: 10px;
+            padding: 10px;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .name-input:focus { outline: none; border-color: var(--laser-glow); }
+
+        .audio-toggle-label {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #8d81ad;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="defense-console" id="consoleFrame">
+
+    <div id="startModal" class="modal-layer">
+        <h2 style="color: var(--laser-glow); text-shadow: 0 0 15px rgba(0,240,255,0.3);">☄️ OPERATION DEFLECTOR</h2>
+        <p>Convert numbers to proper scientific notation. Fire lasers to push the asteroid away and secure your spot on the classroom leaderboard!</p>
+        <button class="fire-btn" id="startBtn" style="width: auto; padding: 14px 40px;">START DEFENSE ENGINE</button>
+        <label class="audio-toggle-label">
+            <input type="checkbox" id="audioToggleCheckbox" checked> Enable Synthesizer Audio Effects
+        </label>
+    </div>
+
+    <div id="endModal" class="modal-layer" style="display: none;">
+        <h2 id="endHeader">MISSION END</h2>
+        <p id="endDesc"></p>
+
+        <div class="leaderboard-container">
+            <div class="leaderboard-title">🏆 Class Top 5 Rankings</div>
+            <div id="leaderboardRows"></div>
+        </div>
+
+        <div class="name-entry-box" id="nameEntryZone">
+            <input type="text" id="playerNameInput" class="name-input" placeholder="Enter Initials/Name" maxlength="12" autocomplete="off">
+            <button class="fire-btn" id="saveScoreBtn" style="width: auto; padding: 0 20px; font-size: 0.9rem;">Submit</button>
+        </div>
+
+        <button class="fire-btn" id="restartBtn" style="width: auto; padding: 12px 35px; display: none;">Defend Again</button>
+    </div>
+
+    <h1>Deflector Beam Console</h1>
+    <div class="alert-bar" id="statusAlert">PANIC LEVEL: MINIMAL</div>
+
+    <div class="viewport-container">
+        <div id="citizenBubble" class="speech-bubble">Is that a shooting star?</div>
+        <canvas id="renderCanvas" width="560" height="180"></canvas>
+    </div>
+
+    <div class="dashboard-row">
+        <div class="dash-card" style="border-color: var(--magma-orange);">
+            <div class="dash-lbl">Asteroid Distance</div>
+            <div id="hudDist" class="dash-val" style="color: var(--magma-orange);">100%</div>
+        </div>
+        <div class="dash-card" style="border-color: var(--plasma-green);">
+            <div class="dash-lbl">Score Points</div>
+            <div id="hudScore" class="dash-val" style="color: var(--plasma-green);">0</div>
+        </div>
+        <div class="dash-card" style="border-color: var(--laser-glow);">
+            <div class="dash-lbl">Streak Mult</div>
+            <div id="hudStreak" class="dash-val" style="color: var(--laser-glow);">1x</div>
+        </div>
+    </div>
+
+    <div class="problem-pod">
+        <div class="problem-string" id="problemDisplay">0.00039</div>
+    </div>
+
+    <div class="input-row">
+        <input type="number" id="coeffInput" class="console-input in-coeff" step="any" placeholder="Base" autocomplete="off">
+        <span class="mult-node">× 10</span>
+        <sup style="top: -0.5em; position: relative;">
+            <input type="number" id="expInput" class="console-input in-exp" placeholder="Exp" autocomplete="off">
+        </sup>
+    </div>
+
+    <button class="fire-btn" id="executeBtn">Fire Counter-Measures!</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('renderCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const hudDist = document.getElementById('hudDist');
+    const hudScore = document.getElementById('hudScore');
+    const hudStreak = document.getElementById('hudStreak');
+    const problemDisplay = document.getElementById('problemDisplay');
+    const coeffInput = document.getElementById('coeffInput');
+    const expInput = document.getElementById('expInput');
+    const executeBtn = document.getElementById('executeBtn');
+    const consoleFrame = document.getElementById('consoleFrame');
+    const citizenBubble = document.getElementById('citizenBubble');
+    const statusAlert = document.getElementById('statusAlert');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const audioToggleCheckbox = document.getElementById('audioToggleCheckbox');
+
+    let score = 0;
+    let streak = 0;
+    let correctAnswers = 0;
+    let timestampStart = 0;
+    let loopRunning = false;
+    let threatDistance = 88; 
+    let mainClockTimerId = null;
+
+    let targetValueRaw = 0;
+    let expectedCoeff = 0;
+    let expectedExp = 0;
+
+    let sparks = [];
+    let beamTimer = 0;
+    let blastFlares = [];
+
+    let isExploding = false;
+    let explosionTimer = 0;
+    let explosionParticles = [];
+
+    let audioCtx = null;
+    let useAudio = true;
+
+    const linesMild = ["Is that a shooting star? Make a wish! 🌠", "Look! Space sparkle! ✨", "Nice day to stand outside.", "What a beautiful sky today!"];
+    const linesConfused = ["Wait... why is it getting larger? 🤔", "Is it just me, or is it getting hot out here?", "That star has a lot of fire on it.", "Should we be worried?"];
+    const linesNervous = ["Honey, did you pack the bunker snacks?! 🍪", "Uh oh. The radar is making a very angry beep.", "I don't think that's a shooting star anymore..."];
+    const linesTerrified = ["I deeply regret my life choices! 😭", "SELL ALL THE STOCKS!!! 📉", "Aaaaaah! It's blocking out the sun!"];
+    const linesDoom = ["OMG!!!! WE ARE ALL GONNA DIE!!! 💀", "GAME OVER MAN, GAME OVER! 🌋", "THIS IS THE END OF THE WORLD!!!"];
+
+    let currentQuoteText = "";
+    let lastQuoteTick = 0;
+
+    function initAudioSafely() {
+        useAudio = audioToggleCheckbox.checked;
+        if (!useAudio) return;
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch (e) {
+            console.log("Audio contextual block safely intercepted:", e);
+            useAudio = false; 
+        }
+    }
+
+    function playLaserSound() {
+        if (!useAudio || !audioCtx) return;
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        } catch(e){}
+    }
+
+    function playErrorSound() {
+        if (!useAudio || !audioCtx) return;
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(90, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+        } catch(e){}
+    }
+
+    function playExplosionSound() {
+        if (!useAudio || !audioCtx) return;
+        try {
+            let lowOsc = audioCtx.createOscillator();
+            let lowGain = audioCtx.createGain();
+            lowOsc.type = 'sawtooth';
+            lowOsc.frequency.setValueAtTime(130, audioCtx.currentTime);
+            lowOsc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 1.2);
+            lowGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            lowGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.4);
+            lowOsc.connect(lowGain); lowGain.connect(audioCtx.destination);
+            lowOsc.start(); lowOsc.stop(audioCtx.currentTime + 1.5);
+        } catch(e){}
+    }
+
+    function beginSimulation() {
+        initAudioSafely();
+        
+        score = 0;
+        streak = 0;
+        correctAnswers = 0;
+        threatDistance = 88; 
+        loopRunning = true;
+        isExploding = false;
+        explosionTimer = 0;
+        explosionParticles = [];
+        timestampStart = Date.now();
+        sparks = [];
+        blastFlares = [];
+        lastQuoteTick = 0;
+
+        document.getElementById('startModal').style.display = 'none';
+        document.getElementById('endModal').style.display = 'none';
+        document.getElementById('nameEntryZone').style.display = 'flex';
+        restartBtn.style.display = 'none';
+        document.getElementById('playerNameInput').value = '';
+
+        updateStatsPanel();
+        generateProblem();
+        
+        setTimeout(() => { coeffInput.focus(); }, 50);
+
+        if (mainClockTimerId) clearInterval(mainClockTimerId);
+        
+        mainClockTimerId = setInterval(() => {
+            if (!loopRunning && !isExploding) return;
+
+            if (loopRunning) {
+                let slowDriftGravity = 0.09 + (correctAnswers * 0.01);
+                threatDistance -= slowDriftGravity;
+
+                if (threatDistance <= 3) {
+                    threatDistance = 0;
+                    triggerApocalypse();
+                }
+                if (threatDistance >= 100) {
+                    haltSimulation(true);
+                }
+                processFXStructures();
+                evaluateInhabitantSpeech();
+            }
+
+            if (isExploding) {
+                processExplosionLoop();
+            }
+
+            renderMainScene();
+            if (loopRunning) updateStatsPanel();
+        }, 50);
+    }
+
+    function generateProblem() {
+        coeffInput.value = ''; expInput.value = '';
+        let baseValSeed = Math.floor(Math.random() * 89) + 10; 
+        expectedCoeff = parseFloat((baseValSeed / 10).toFixed(1));
+
+        if (Math.random() > 0.5) {
+            expectedExp = Math.floor(Math.random() * 4) + 2; 
+            targetValueRaw = expectedCoeff * Math.pow(10, expectedExp);
+            problemDisplay.textContent = targetValueRaw.toLocaleString();
+        } else {
+            expectedExp = (Math.floor(Math.random() * 4) + 2) * -1; 
+            targetValueRaw = expectedCoeff * Math.pow(10, expectedExp);
+            problemDisplay.textContent = targetValueRaw.toFixed(Math.abs(expectedExp) + 1).replace(/\.?0+$/, "");
+            if (problemDisplay.textContent === "0") problemDisplay.textContent = targetValueRaw.toFixed(6);
+        }
+    }
+
+    function executeInterception() {
+        if (!loopRunning) return;
+
+        const uCoeff = parseFloat(coeffInput.value);
+        const uExp = parseInt(expInput.value);
+
+        if (isNaN(uCoeff) || isNaN(uExp)) return;
+
+        if (uCoeff < 1.0 || uCoeff >= 10.0) {
+            playErrorSound(); applyImpactRumble(15);
+            streak = 0; threatDistance -= 4; 
+            generateProblem(); coeffInput.focus();
+            return;
+        }
+
+        const calculatedNet = uCoeff * Math.pow(10, uExp);
+        const acceptableDelta = targetValueRaw * 0.001;
+        const correctValue = Math.abs(calculatedNet - targetValueRaw) <= acceptableDelta;
+        const correctFormat = (uCoeff === expectedCoeff && uExp === expectedExp);
+
+        if (correctValue && correctFormat) {
+            playLaserSound();
+            correctAnswers++; streak++;
+            score += (100 * streak);
+            let repelPushDistance = 14 + (streak * 1.5);
+            threatDistance = Math.min(98, threatDistance + repelPushDistance);
+            beamTimer = 8; triggerBlastRingParticles(); generateProblem();
+        } else {
+            playErrorSound(); streak = 0; threatDistance -= 6; applyImpactRumble(15);
+        }
+        updateStatsPanel(); coeffInput.focus();
+    }
+
+    function applyImpactRumble(intensity) {
+        let rx = (Math.random() - 0.5) * intensity;
+        let ry = (Math.random() - 0.5) * intensity;
+        consoleFrame.style.transform = `translate(${rx}px, ${ry}px)`;
+        setTimeout(() => { consoleFrame.style.transform = "none"; }, 50);
+    }
+
+    function triggerApocalypse() {
+        loopRunning = false;
+        isExploding = true;
+        explosionTimer = 0;
+        citizenBubble.style.display = 'none';
+        playExplosionSound();
+
+        for(let i=0; i<65; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 7 + 2;
+            explosionParticles.push({
+                x: 60 + (Math.random() * 40 - 20),
+                y: canvas.height/2 + (Math.random() * 40 - 20),
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: Math.random() * 5 + 2,
+                color: ['#ff4500', '#ffaa00', '#ff0044', '#3d265a', '#ffffff'][Math.floor(Math.random()*5)],
+                alpha: 1
+            });
+        }
+    }
+
+    function processExplosionLoop() {
+        explosionTimer++;
+        if (explosionTimer < 25) {
+            applyImpactRumble(25);
+        }
+
+        explosionParticles.forEach((p, idx) => {
+            p.x += p.vx; p.y += p.vy;
+            p.alpha -= 0.02;
+            if(p.alpha <= 0) explosionParticles.splice(idx, 1);
+        });
+
+        if (explosionTimer > 35) {
+            isExploding = false;
+            haltSimulation(false);
+        }
+    }
+
+    function updateStatsPanel() {
+        hudDist.textContent = `${Math.max(0, Math.round(threatDistance))}%`;
+        hudScore.textContent = score;
+        hudStreak.textContent = `${streak}x`;
+    }
+
+    function evaluateInhabitantSpeech() {
+        lastQuoteTick++;
+        if (lastQuoteTick > 45 || currentQuoteText === "") {
+            lastQuoteTick = 0;
+            let targetGroup = linesMild;
+
+            if (threatDistance >= 70) { targetGroup = linesMild; statusAlert.textContent = "🔊 PANIC LEVEL: MINIMAL (ALIENS ARE CHILLING)"; statusAlert.style.color = "var(--plasma-green)"; }
+            else if (threatDistance >= 50) { targetGroup = linesConfused; statusAlert.textContent = "🔊 PANIC LEVEL: MILD CONFUSION"; statusAlert.style.color = "#00f0ff"; }
+            else if (threatDistance >= 30) { targetGroup = linesNervous; statusAlert.textContent = "⚠️ PANIC LEVEL: MODERATE ANXIETY"; statusAlert.style.color = "#ffaa00"; }
+            else if (threatDistance >= 15) { targetGroup = linesTerrified; statusAlert.textContent = "🚨 PANIC LEVEL: TOTAL CHAOS DETECTED"; statusAlert.style.color = "#ff4800"; }
+            else { targetGroup = linesDoom; statusAlert.textContent = "💀 PANIC LEVEL: COMPLETE APOCALYPTIC MELTDOWN!!!"; statusAlert.style.color = "#ff0044"; }
+
+            currentQuoteText = targetGroup[Math.floor(Math.random() * targetGroup.length)];
+            citizenBubble.textContent = currentQuoteText;
+        }
+        citizenBubble.style.display = (threatDistance > 95) ? 'none' : 'block';
+    }
+
+    function processFXStructures() {
+        let minX = 110; let maxX = canvas.width - 40;
+        let astX = minX + (threatDistance / 100) * (maxX - minX);
+        let astY = canvas.height / 2;
+
+        if (loopRunning && Math.random() > 0.4) {
+            sparks.push({ x: astX, y: astY + (Math.random() * 12 - 6), vx: Math.random() * 2.5 + 1, vy: Math.random() * 2 - 1, alpha: 1, size: Math.random() * 3 + 1 });
+        }
+        sparks.forEach((p, idx) => { p.x += p.vx; p.y += p.vy; p.alpha -= 0.04; if (p.alpha <= 0) sparks.splice(idx, 1); });
+        blastFlares.forEach((f, idx) => { f.x += f.vx; f.y += f.vy; f.alpha -= 0.05; if (f.alpha <= 0) blastFlares.splice(idx, 1); });
+        if (beamTimer > 0) beamTimer--;
+    }
+
+    function triggerBlastRingParticles() {
+        let minX = 110; let maxX = canvas.width - 40;
+        let astX = minX + (threatDistance / 100) * (maxX - minX);
+        let astY = canvas.height / 2;
+        for(let i=0; i<20; i++) {
+            let angle = Math.random() * Math.PI * 2; let velocity = Math.random() * 4 + 2;
+            blastFlares.push({ x: astX, y: astY, vx: Math.cos(angle) * velocity, vy: Math.sin(angle) * velocity, size: Math.random() * 3 + 2, alpha: 1 });
+        }
+    }
+
+    function drawAnimatedAliens(panicModifier) {
+        if(isExploding) return; 
+        let alienPositions = [ {x: 15, y: 105, r: 8}, {x: 34, y: 120, r: 10}, {x: 52, y: 95, r: 7} ];
+
+        alienPositions.forEach((pos) => {
+            let shakeX = (Math.random() - 0.5) * panicModifier * 4;
+            let shakeY = (Math.random() - 0.5) * panicModifier * 4;
+            let finalX = pos.x + shakeX; let finalY = pos.y + shakeY;
+
+            let redValue = Math.floor((100 - threatDistance) * 2.5);
+            ctx.fillStyle = `rgb(${redValue}, 180, 210)`;
+            
+            ctx.beginPath(); ctx.arc(finalX, finalY, pos.r, 0, Math.PI, true);
+            ctx.lineTo(finalX + pos.r, finalY + 15); ctx.lineTo(finalX - pos.r, finalY + 15);
+            ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = "#ffffff"; ctx.beginPath();
+            ctx.arc(finalX - (pos.r/2.5), finalY - 2, pos.r/3, 0, Math.PI * 2);
+            ctx.arc(finalX + (pos.r/2.5), finalY - 2, pos.r/3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#000000"; let pupilRadius = 1 + (panicModifier * 0.4);
+            ctx.beginPath(); ctx.arc(finalX - (pos.r/2.5), finalY - 2, pupilRadius, 0, Math.PI * 2);
+            ctx.arc(finalX + (pos.r/2.5), finalY - 2, pupilRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#000000"; ctx.lineWidth = 1.5; ctx.beginPath();
+            if (panicModifier > 1.5) {
+                ctx.fillStyle = "#000000"; ctx.arc(finalX, finalY + 4, 2 + (panicModifier*0.3), 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.arc(finalX, finalY + 3, pos.r/3, 0, Math.PI); ctx.stroke();
+            }
+        });
+    }
+
+    function renderMainScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#030209"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let pX = -45; let pY = canvas.height / 2; let pRadius = 105;
+
+        if (!isExploding && threatDistance > 0) {
+            let rGrad = ctx.createRadialGradient(pX, pY, pRadius - 20, pX, pY, pRadius + 35);
+            rGrad.addColorStop(0, 'rgba(100, 45, 230, 0.7)'); rGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.25)'); rGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = rGrad; ctx.beginPath(); ctx.arc(pX, pY, pRadius + 35, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = "#0a0824"; ctx.strokeStyle = "#502fc4"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(pX, pY, pRadius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "rgba(57, 255, 20, 0.2)";
+            ctx.beginPath(); ctx.arc(pX, pY, pRadius, -Math.PI/6, Math.PI/4); ctx.lineTo(pX, pY); ctx.fill();
+
+            let panicScaleFactor = Math.max(0, (100 - threatDistance) / 25);
+            drawAnimatedAliens(panicScaleFactor);
+        }
+
+        if (isExploding) {
+            explosionParticles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.globalAlpha = 1.0; 
+
+            ctx.strokeStyle = `rgba(255, 69, 0, ${1 - (explosionTimer / 35)})`;
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(40, canvas.height/2, explosionTimer * 8, 0, Math.PI*2); stroke();
+        }
+
+        if (loopRunning) {
+            let minX = pRadius - 10; let maxX = canvas.width - 40;
+            let astX = minX + (threatDistance / 100) * (maxX - minX);
+            let astY = canvas.height / 2;
+
+            if (beamTimer > 0) {
+                ctx.strokeStyle = "rgba(57, 255, 20, 0.4)"; ctx.lineWidth = 12;
+                ctx.beginPath(); ctx.moveTo(60, pY); ctx.lineTo(astX, astY); ctx.stroke();
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(60, pY); ctx.lineTo(astX, astY); ctx.stroke();
+            }
+
+            sparks.forEach(p => { ctx.fillStyle = `rgba(255, 85, 0, ${p.alpha})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); });
+            blastFlares.forEach(f => { ctx.fillStyle = `rgba(0, 255, 255, ${f.alpha})`; ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI*2); ctx.fill(); });
+
+            let sizePulse = 17 + Math.sin(Date.now() / 140) * 1.5;
+            let astGrad = ctx.createRadialGradient(astX, astY, 2, astX, astY, sizePulse + 16);
+            astGrad.addColorStop(0, '#ff9900'); astGrad.addColorStop(0.5, 'rgba(255, 30, 0, 0.5)'); astGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = astGrad; ctx.beginPath(); ctx.arc(astX, astY, sizePulse + 16, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = "#1c110d"; ctx.strokeStyle = "#ff4500"; ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let j = 0; j < 8; j++) {
+                let angle = (j * Math.PI / 4); let radialDist = sizePulse + (j % 2 === 0 ? 3 : -3);
+                let lx = astX + Math.cos(angle) * radialDist; let ly = astY + Math.sin(angle) * radialDist;
+                if (j === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+            }
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.strokeStyle = (threatDistance < 30) ? "#ff0044" : "rgba(0, 240, 255, 0.4)"; ctx.lineWidth = 1.5;
+            ctx.strokeRect(astX - 24, astY - 24, 48, 48);
+        }
+    }
+
+    function getLeaderboard() {
+        let scores = localStorage.getItem('alien_math_leaderboard');
+        return scores ? JSON.parse(scores) : [
+            {name: "MR_SCI", score: 1200},
+            {name: "ALiEN_1", score: 700},
+            {name: "EARTH0", score: 200}
+        ];
+    }
+
+    function renderLeaderboardView(currentSubId = "") {
+        const boardRowsContainer = document.getElementById('leaderboardRows');
+        boardRowsContainer.innerHTML = '';
+        let list = getLeaderboard();
+
+        list.sort((a,b) => b.score - a.score);
+        list = list.slice(0, 5);
+
+        list.forEach((entry, idx) => {
+            const row = document.createElement('div');
+            row.className = 'score-row';
+            if (entry.id === currentSubId) row.className += ' highlight';
+            row.innerHTML = `<span>${idx + 1}. ${entry.name}</span><span>${entry.score} pts</span>`;
+            boardRowsContainer.innerHTML += row.outerHTML;
+        });
+    }
+
+    function submitScoreToLeaderboard() {
+        const nameInputBox = document.getElementById('playerNameInput');
+        let name = nameInputBox.value.trim().toUpperCase();
+        if(!name) name = "ANONYMOUS";
+
+        let currentBoard = getLeaderboard();
+        let uniqueId = "score_" + Date.now();
+        
+        currentBoard.push({ id: uniqueId, name: name, score: score });
+        currentBoard.sort((a,b) => b.score - a.score);
+        
+        localStorage.setItem('alien_math_leaderboard', JSON.stringify(currentBoard));
+
+        document.getElementById('nameEntryZone').style.display = 'none';
+        restartBtn.style.display = 'inline-block';
+
+        renderLeaderboardView(uniqueId);
+    }
+
+    function haltSimulation(victoryAchieved) {
+        loopRunning = false;
+        clearInterval(mainClockTimerId);
+        citizenBubble.style.display = 'none';
+
+        const endHeader = document.getElementById('endHeader');
+        const endDesc = document.getElementById('endDesc');
+        
+        hudDist.textContent = victoryAchieved ? "100%" : "0%";
+
+        if (victoryAchieved) {
+            endHeader.textContent = "👽 PLANET SAVED!";
+            endHeader.style.color = "var(--plasma-green)";
+            endDesc.textContent = `Excellent calculations! You deflected the asteroid. Final Score: ${score} points. Add your name below!`;
+        } else {
+            endHeader.textContent = "💥 APOCALYPSE DETONATION";
+            endHeader.style.color = "var(--magma-orange)";
+            endDesc.textContent = `The planet exploded! Total calculations yielded: ${score} points. Log your record into the logs below!`;
+        }
+
+        renderLeaderboardView();
+        document.getElementById('endModal').style.display = 'flex';
+    }
+
+    // Direct binding setup
+    startBtn.onclick = beginSimulation;
+    restartBtn.onclick = beginSimulation;
+    executeBtn.onclick = executeInterception;
+
+    [coeffInput, expInput].forEach(box => {
+        box.onkeypress = (e) => { if (e.key === 'Enter') executeInterception(); };
+    });
+
+    document.getElementById('saveScoreBtn').onclick = submitScoreToLeaderboard;
+    document.getElementById('playerNameInput').onkeypress = (e) => { if (e.key === 'Enter') submitScoreToLeaderboard(); };
+
+    renderMainScene();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Notation Tool</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --gray-800: #1f2937;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --accent: #059669;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        h2 {
+            margin-top: 20px;
+            border-top: 2px dashed var(--gray-200);
+            padding-top: 25px;
+        }
+
+        p.intro {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .display-container {
+            background-color: var(--gray-100);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px solid var(--gray-200);
+        }
+
+        .equation {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .standard-display-box {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 1.4rem;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            margin-top: 10px;
+        }
+
+        .highlight {
+            padding: 2px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .coeff-color { background-color: var(--amber-light); color: var(--amber); }
+        .exp-color { background-color: var(--primary-light); color: var(--primary); }
+        .standard-color { background-color: #d1fae5; color: var(--accent); }
+        .equals { color: #9ca3af; }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .num-input {
+            width: 85px;
+            padding: 4px 8px;
+            font-size: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .num-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #coeffSlider::-webkit-slider-thumb { background: var(--amber); }
+
+        .explanation-box {
+            background-color: #f9fafb;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        /* Quiz Styles */
+        .quiz-box {
+            background: #fafafa;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .quiz-question {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .quiz-input-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .quiz-ans-field {
+            padding: 8px;
+            font-size: 1.1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .quiz-ans-large { width: 150px; }
+        .quiz-ans-split-coeff { width: 80px; border-color: var(--amber); }
+        .quiz-ans-split-exp { width: 60px; border-color: var(--primary); }
+
+        .quiz-action-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+
+        .feedback {
+            text-align: center;
+            font-weight: 600;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+        }
+        .feedback.correct { background: #d1fae5; color: var(--accent); display: block; }
+        .feedback.wrong { background: #fee2e2; color: #dc2626; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Scientific Notation Explorer</h1>
+    <p class="intro">Drag the sliders or type numbers to see how the decimal moves!</p>
+
+    <div class="display-container">
+        <div class="equation">
+            <span id="coeffDisplay" class="highlight coeff-color">3.45</span>
+            <span>× 10<sup id="expDisplay" class="highlight exp-color">2</sup></span>
+            <span class="equals">=</span>
+        </div>
+        <div id="standardDisplay" class="standard-display-box highlight standard-color">345</div>
+    </div>
+
+    <div class="control-group">
+        <div class="control-label">
+            <span style="color: var(--amber);">Number (1.00 to 9.99):</span>
+            <input type="number" id="coeffBox" class="num-input" min="1.00" max="9.99" step="0.01" value="3.45">
+        </div>
+        <input type="range" id="coeffSlider" min="1.00" max="9.99" step="0.01" value="3.45">
+    </div>
+
+    <div class="control-group">
+        <div class="control-label">
+            <span style="color: var(--primary);">Exponent (-12 to 12):</span>
+            <input type="number" id="expBox" class="num-input" min="-12" max="12" step="1" value="2">
+        </div>
+        <input type="range" id="expSlider" min="-12" max="12" step="1" value="2">
+    </div>
+
+    <div class="explanation-box" id="explanation"></div>
+
+    <h2>Test Yourself!</h2>
+    <div class="quiz-box">
+        <div class="quiz-question" id="quizQuestion">Loading question...</div>
+        
+        <div class="quiz-input-container" id="quizInputArea">
+            </div>
+        
+        <div class="quiz-action-container">
+            <button class="btn btn-primary" id="checkBtn">Check Answer</button>
+            <button class="btn btn-secondary" id="nextBtn" style="display:none;">Next Question</button>
+        </div>
+        
+        <div id="quizFeedback" class="feedback"></div>
+    </div>
+</div>
+
+<script>
+    const coeffSlider = document.getElementById('coeffSlider');
+    const coeffBox = document.getElementById('coeffBox');
+    const expSlider = document.getElementById('expSlider');
+    const expBox = document.getElementById('expBox');
+    
+    const coeffDisplay = document.getElementById('coeffDisplay');
+    const expDisplay = document.getElementById('expDisplay');
+    const standardDisplay = document.getElementById('standardDisplay');
+    const explanation = document.getElementById('explanation');
+
+    function updateFromSlider() {
+        coeffBox.value = coeffSlider.value;
+        expBox.value = expSlider.value;
+        calculateNotation();
+    }
+
+    function updateFromBox() {
+        if(coeffBox.value < 1.0) coeffBox.value = 1.0;
+        if(coeffBox.value > 9.99) coeffBox.value = 9.99;
+        if(expBox.value < -12) expBox.value = -12;
+        if(expBox.value > 12) expBox.value = 12;
+
+        coeffSlider.value = coeffBox.value;
+        expSlider.value = expBox.value;
+        calculateNotation();
+    }
+
+    function formatStandardNumber(m, n) {
+        if (n === 0) return m.toString();
+        
+        let str = m.toString().replace('.', '');
+        let dotIdx = m.toString().indexOf('.');
+        let originalDecimals = dotIdx === -1 ? 0 : m.toString().length - 1 - dotIdx;
+        
+        if (n > 0) {
+            if (n >= originalDecimals) {
+                return str + '0'.repeat(n - originalDecimals);
+            } else {
+                return str.slice(0, dotIdx + n) + '.' + str.slice(dotIdx + n);
+            }
+        } else { 
+            let zeros = '0'.repeat(Math.abs(n) - 1);
+            return '0.' + zeros + str;
+        }
+    }
+
+    function calculateNotation() {
+        const m = parseFloat(coeffSlider.value);
+        const n = parseInt(expSlider.value);
+
+        coeffDisplay.textContent = m;
+        expDisplay.textContent = n;
+
+        standardDisplay.textContent = formatStandardNumber(m, n);
+
+        if (n > 0) {
+            explanation.innerHTML = `Because the exponent is <strong>positive (${n})</strong>, move the decimal point <strong>${n} place${n > 1 ? 's' : ''} to the right</strong>.`;
+        } else if (n < 0) {
+            explanation.innerHTML = `Because the exponent is <strong>negative (${n})</strong>, move the decimal point <strong>${Math.abs(n)} place${Math.abs(n) > 1 ? 's' : ''} to the left</strong>.`;
+        } else {
+            explanation.innerHTML = `Since the exponent is <strong>0</strong>, the decimal point doesn't move.`;
+        }
+    }
+
+    coeffSlider.addEventListener('input', updateFromSlider);
+    expSlider.addEventListener('input', updateFromSlider);
+    coeffBox.addEventListener('input', updateFromBox);
+    expBox.addEventListener('input', updateFromBox);
+
+    // --- Quiz Logic ---
+    const quizQuestion = document.getElementById('quizQuestion');
+    const quizInputArea = document.getElementById('quizInputArea');
+    const checkBtn = document.getElementById('checkBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const quizFeedback = document.getElementById('quizFeedback');
+
+    let currentQuestionType = 0; // 0: Sci -> Standard, 1: Standard -> Sci
+    let qCoeff, qExp, qStdString;
+
+    function generateQuestion() {
+        quizFeedback.className = 'feedback';
+        quizFeedback.textContent = '';
+        nextBtn.style.display = 'none';
+        checkBtn.style.display = 'inline-block';
+        
+        currentQuestionType = Math.random() > 0.5 ? 0 : 1;
+        
+        const totalDecimals = Math.random() > 0.5 ? 1 : 2;
+        qCoeff = parseFloat((Math.random() * 8.9 + 1).toFixed(totalDecimals)); 
+        qExp = Math.floor(Math.random() * 11) - 5; // -5 to 5
+        if(qExp === 0) qExp = 2; 
+
+        qStdString = formatStandardNumber(qCoeff, qExp);
+
+        if (currentQuestionType === 0) {
+            // Sci -> Standard
+            quizQuestion.innerHTML = `Convert <span style="color:var(--amber)">${qCoeff}</span> × 10<sup style="color:var(--primary)">${qExp}</sup> to a standard number.`;
+            quizInputArea.innerHTML = `<input type="number" id="singleAns" class="quiz-ans-field quiz-ans-large" step="any" placeholder="Standard number">`;
+        } else {
+            // Standard -> Sci
+            quizQuestion.innerHTML = `Convert the standard number <strong>${qStdString}</strong> into scientific notation.`;
+            quizInputArea.innerHTML = `
+                <input type="number" id="splitCoeff" class="quiz-ans-field quiz-ans-split-coeff" step="any" placeholder="Number">
+                <span>× 10</span>
+                <sup style="top: -0.5em; position: relative;">
+                    <input type="number" id="splitExp" class="quiz-ans-field quiz-ans-split-exp" placeholder="Exp">
+                </sup>
+            `;
+        }
+        
+        // Add enter key support to new inputs
+        const inputs = quizInputArea.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('keypress', (e) => { if(e.key === 'Enter') checkAnswer(); });
+        });
+    }
+
+    function checkAnswer() {
+        let isCorrect = false;
+
+        if (currentQuestionType === 0) {
+            const userAns = document.getElementById('singleAns').value.trim();
+            if (userAns === '') return;
+            isCorrect = (parseFloat(userAns) === parseFloat(qStdString));
+        } else {
+            const userCoeff = document.getElementById('splitCoeff').value.trim();
+            const userExp = document.getElementById('splitExp').value.trim();
+            if (userCoeff === '' || userExp === '') return;
+            
+            isCorrect = (parseFloat(userCoeff) === qCoeff && parseInt(userExp) === qExp);
+        }
+
+        if (isCorrect) {
+            quizFeedback.textContent = "🎉 Correct! Perfect calculation.";
+            quizFeedback.className = "feedback correct";
+            checkBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+        } else {
+            quizFeedback.textContent = "❌ Not quite. Trace your decimal movements and try again!";
+            quizFeedback.className = "feedback wrong";
+        }
+    }
+
+    checkBtn.addEventListener('click', checkAnswer);
+    nextBtn.addEventListener('click', generateQuestion);
+
+    // Initialize
+    calculateNotation();
+    generateQuestion();
+</script>
+
+</body>
+</html>

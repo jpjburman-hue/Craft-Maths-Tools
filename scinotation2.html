@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Equipment Scientific Notation Quiz</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --gray-800: #1f2937;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --accent: #059669;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        p.intro {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        /* Screen housing for the instruments */
+        .instrument-panel {
+            background: #1e222b;
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            border: 4px solid #374151;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        canvas {
+            background: #ffffff;
+            border-radius: 8px;
+            max-width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .prompt-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+
+        /* Standard Split Notation Inputs */
+        .quiz-input-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .quiz-ans-field {
+            padding: 10px;
+            font-size: 1.2rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .quiz-ans-split-coeff { width: 100px; border-color: var(--amber); }
+        .quiz-ans-split-exp { width: 75px; border-color: var(--primary); }
+
+        .quiz-ans-field:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        .action-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+
+        .feedback {
+            text-align: center;
+            font-weight: 600;
+            padding: 14px;
+            border-radius: 8px;
+            display: none;
+            line-height: 1.5;
+        }
+        .feedback.correct { background: #d1fae5; color: var(--accent); display: block; }
+        .feedback.wrong { background: #fee2e2; color: #dc2626; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Lab Bench Notation Test</h1>
+    <p class="intro">Examine the virtual lab equipment below, read the display, and log your data in standard scientific notation format.</p>
+
+    <div class="instrument-panel">
+        <canvas id="labCanvas" width="480" height="200"></canvas>
+    </div>
+
+    <div class="prompt-text" id="questionPrompt">Powering up equipment...</div>
+
+    <div class="quiz-input-container">
+        <input type="number" id="userCoeff" class="quiz-ans-field quiz-ans-split-coeff" step="any" placeholder="Number">
+        <span>× 10</span>
+        <sup style="top: -0.5em; position: relative;">
+            <input type="number" id="userExp" class="quiz-ans-field quiz-ans-split-exp" placeholder="Exp">
+        </sup>
+        <span id="unitDisplay" style="margin-left: 8px; font-size: 1.2rem; color: #4b5563;"></span>
+    </div>
+
+    <div class="action-container">
+        <button class="btn btn-primary" id="checkBtn">Submit Measurement</button>
+        <button class="btn btn-secondary" id="nextBtn" style="display:none;">Next Question</button>
+    </div>
+
+    <div id="feedbackBox" class="feedback"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('labCanvas');
+    const ctx = canvas.getContext('2d');
+    const questionPrompt = document.getElementById('questionPrompt');
+    const userCoeff = document.getElementById('userCoeff');
+    const userExp = document.getElementById('userExp');
+    const unitDisplay = document.getElementById('unitDisplay');
+    const checkBtn = document.getElementById('checkBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const feedbackBox = document.getElementById('feedbackBox');
+
+    // State parameters
+    let activeInstrumentType = 0; // 0: Voltmeter, 1: Microscope, 2: Laser Rangefinder, 3: Chemical Balance
+    let targetActualValue = 0;
+    let expectedCoeff = 0;
+    let expectedExp = 0;
+    let currentUnits = "";
+
+    function generateQuestion() {
+        userCoeff.value = '';
+        userExp.value = '';
+        feedbackBox.className = 'feedback';
+        feedbackBox.textContent = '';
+        nextBtn.style.display = 'none';
+        checkBtn.style.display = 'inline-block';
+
+        // Cycle through 4 entirely different physical tools
+        activeInstrumentType = Math.floor(Math.random() * 4);
+        calculateDeviceValues();
+        renderDeviceGraphics();
+    }
+
+    function calculateDeviceValues() {
+        let baseVal = Math.floor(Math.random() * 89) + 10; // 10 to 98
+        expectedCoeff = parseFloat((baseVal / 10).toFixed(1));
+
+        switch(activeInstrumentType) {
+            case 0: // Industrial Generator Dial
+                expectedExp = 4; 
+                targetActualValue = baseVal * 1000; 
+                currentUnits = "V";
+                questionPrompt.innerHTML = "Read the high-tension voltage coming off the generator array.";
+                break;
+            case 1: // Microscope Focus Scale
+                expectedExp = -5; 
+                targetActualValue = baseVal / 1000000; 
+                currentUnits = "m";
+                questionPrompt.innerHTML = "Measure the total diameter of this plant cell cell-wall sample.";
+                break;
+            case 2: // Digital Laser Rangefinder
+                expectedExp = 3; 
+                targetActualValue = baseVal * 100; 
+                currentUnits = "km";
+                questionPrompt.innerHTML = "Note the tracking distance mapped by the satellite laser telemetry system.";
+                break;
+            case 3: // Analytical Mass Balance
+                expectedExp = -3; 
+                targetActualValue = baseVal / 10000; 
+                currentUnits = "g";
+                questionPrompt.innerHTML = "Determine the precise weight of the fine mineral powder deposit.";
+                break;
+        }
+        unitDisplay.textContent = currentUnits;
+    }
+
+    function renderDeviceGraphics() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Base plate background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Header Background plate for equipment names
+        ctx.fillStyle = "#f1f5f9";
+        ctx.fillRect(0, 0, canvas.width, 40);
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, 200);
+        ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
+
+        // Label setups
+        ctx.fillStyle = "#475569";
+        ctx.font = "bold 13px sans-serif";
+        ctx.textAlign = "center";
+
+        if (activeInstrumentType === 0) {
+            // --- INSTRUMENT 0: LARGE HIGH-CONTRAST ANALOG DIAL ---
+            ctx.fillText("DEVICE ID: POWER-GRID HIGH-TENSION VOLTMETER", canvas.width / 2, 26);
+
+            let cx = canvas.width / 2;
+            let cy = 180;
+            let radius = 120;
+
+            // Curved gauge backing arc
+            ctx.strokeStyle = "#1e2937";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, Math.PI, 2 * Math.PI);
+            ctx.stroke();
+
+            // Clear, legible major values
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillStyle = "#1e2937";
+
+            for (let i = 0; i <= 10; i++) {
+                let angle = Math.PI + (i * Math.PI / 10);
+                let xStart = cx + Math.cos(angle) * radius;
+                let yStart = cy + Math.sin(angle) * radius;
+                let xEnd = cx + Math.cos(angle) * (radius - 15);
+                let yEnd = cy + Math.sin(angle) * (radius - 15);
+
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(xStart, yStart); ctx.lineTo(xEnd, yEnd); ctx.stroke();
+
+                let xText = cx + Math.cos(angle) * (radius - 34);
+                let yText = cy + Math.sin(angle) * (radius - 34);
+                ctx.fillText((i * 10) + "k", xText, yText + 5);
+            }
+
+            // Indicator Needle
+            let currentDisplayVal = targetActualValue / 1000; 
+            let targetAngle = Math.PI + (currentDisplayVal / 100) * Math.PI;
+
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(targetAngle) * (radius - 10), cy + Math.sin(targetAngle) * (radius - 10));
+            ctx.stroke();
+
+            // Pivot pin
+            ctx.fillStyle = "#1e2937";
+            ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2 * Math.PI); ctx.fill();
+        } 
+        else if (activeInstrumentType === 1) {
+            // --- INSTRUMENT 1: HIGH-RESOLUTION LINEAR SLIDER BAR (FIXED LEGIBILITY) ---
+            ctx.fillText("DEVICE ID: OPTICAL ZOOM MICRO-MEASUREMENT SLIDE", canvas.width / 2, 22);
+            
+            ctx.font = "italic 12px sans-serif";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText("Each tick mark represents 1.0 × 10⁻⁵ meters", canvas.width / 2, 36);
+
+            // Large center slide viewport box
+            ctx.fillStyle = "#fafafa";
+            ctx.fillRect(30, 70, 420, 80);
+            ctx.strokeStyle = "#334155";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(30, 70, 420, 80);
+
+            // Main axis line
+            ctx.beginPath(); ctx.moveTo(50, 115); ctx.lineTo(430, 115); ctx.stroke();
+
+            ctx.font = "bold 14px monospace"; 
+            ctx.fillStyle = "#000000";
+
+            // Draw clean clear integer tick tracks
+            for (let i = 0; i <= 10; i++) {
+                let xPos = 50 + (i * 38);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#000000";
+                ctx.beginPath(); ctx.moveTo(xPos, 103); ctx.lineTo(xPos, 127); ctx.stroke();
+                
+                ctx.fillText(i.toString(), xPos, 93);
+            }
+
+            // Red marker tracking line
+            let targetRatio = targetActualValue / 0.00010;
+            let markerX = 50 + (targetRatio * 380);
+
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(markerX, 72); ctx.lineTo(markerX, 148); ctx.stroke();
+        } 
+        else if (activeInstrumentType === 2) {
+            // --- INSTRUMENT 2: BOLD RADAR SCREEN READOUT ---
+            ctx.fillText("DEVICE ID: TELEMETRY LONG-RANGE TELE-FINDER", canvas.width / 2, 26);
+
+            // Black circular radar glass console
+            let rcx = canvas.width / 2;
+            let rcy = 120;
+            ctx.fillStyle = "#0f172a";
+            ctx.beginPath(); ctx.arc(rcx, rcy, 65, 0, 2*Math.PI); ctx.fill();
+            ctx.strokeStyle = "#475569";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Concentric scanning range rings
+            ctx.strokeStyle = "rgba(34, 197, 94, 0.4)";
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(rcx, rcy, 45, 0, 2*Math.PI); ctx.stroke();
+            ctx.beginPath(); ctx.arc(rcx, rcy, 25, 0, 2*Math.PI); ctx.stroke();
+
+            // Radar ping indicator dot
+            ctx.fillStyle = "#22c55e";
+            ctx.beginPath(); ctx.arc(rcx + 30, rcy - 20, 6, 0, 2*Math.PI); ctx.fill();
+
+            // Large Digital Display Panel below
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(295, 85, 150, 60);
+            ctx.strokeStyle = "#3b82f6";
+            ctx.strokeRect(295, 85, 150, 60);
+
+            ctx.fillStyle = "#3b82f6";
+            ctx.font = "bold 22px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(targetActualValue + " km", 370, 122);
+        } 
+        else {
+            // --- INSTRUMENT 3: PHARMACEUTICAL LABORATORY WEIGHT PAN ---
+            ctx.fillText("DEVICE ID: ANALYTICAL LAB WEIGHT ISOLATOR", canvas.width / 2, 26);
+
+            ctx.fillStyle = "#94a3b8";
+            ctx.fillRect(60, 130, 100, 10); 
+            ctx.fillStyle = "#cbd5e1";
+            ctx.fillRect(40, 120, 140, 10); 
+
+            // Floating crystal sample
+            ctx.fillStyle = "#a855f7";
+            ctx.beginPath();
+            ctx.moveTo(90, 120); ctx.lineTo(110, 95); ctx.lineTo(130, 120);
+            ctx.closePath(); ctx.fill();
+
+            // Digital LCD readout screen
+            ctx.fillStyle = "#042f1a";
+            ctx.fillRect(240, 75, 200, 75);
+            ctx.strokeStyle = "#10b981";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(240, 75, 200, 75);
+
+            ctx.fillStyle = "#10b981";
+            ctx.font = "bold 26px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(targetActualValue.toFixed(4) + " g", 340, 120);
+        }
+    }
+
+    function checkAnswer() {
+        const uCoeffVal = parseFloat(userCoeff.value);
+        const uExpVal = parseInt(userExp.value);
+
+        if (isNaN(uCoeffVal) || isNaN(uExpVal)) {
+            alert("Please input both the base number and the base-10 exponent before evaluating.");
+            return;
+        }
+
+        if (uCoeffVal < 1.0 || uCoeffVal >= 10.0) {
+            feedbackBox.innerHTML = `❌ <strong>Improper Notation Format!</strong> Your front number must be <strong>between 1.0 and 9.99</strong>. Re-arrange your decimal shift!`;
+            feedbackBox.className = "feedback wrong";
+            return;
+        }
+
+        const userCalculatedValue = uCoeffVal * Math.pow(10, uExpVal);
+        const marginOfError = targetActualValue * 0.0001; 
+        
+        const matchesValue = Math.abs(userCalculatedValue - targetActualValue) <= marginOfError;
+        const matchesNotationExact = (uCoeffVal === expectedCoeff && uExpVal === expectedExp);
+
+        if (matchesValue && matchesNotationExact) {
+            feedbackBox.innerHTML = `🎉 <strong>Perfect!</strong> That is correct. Reading matches device criteria: <strong>${uCoeffVal} × 10<sup>${uExpVal}</sup> ${currentUnits}</strong>.`;
+            feedbackBox.className = "feedback correct";
+            checkBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+        } else if (matchesValue && !matchesNotationExact) {
+            feedbackBox.innerHTML = `⚠️ <strong>Close!</strong> Your math calculates to the right value, but it is not in proper scientific notation format. Move the decimal point so your starting number is between 1.0 and 9.99.`;
+            feedbackBox.className = "feedback wrong";
+        } else {
+            feedbackBox.innerHTML = `❌ <strong>Incorrect Value!</strong> Look carefully at the numbers and labels on the device screen. Count your decimal placements again.`;
+            feedbackBox.className = "feedback wrong";
+        }
+    }
+
+    checkBtn.addEventListener('click', checkAnswer);
+    nextBtn.addEventListener('click', generateQuestion);
+
+    [userCoeff, userExp].forEach(input => {
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') checkAnswer(); });
+    });
+
+    generateQuestion();
+</script>
+
+</body>
+</html>
